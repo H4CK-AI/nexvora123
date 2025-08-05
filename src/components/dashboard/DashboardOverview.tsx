@@ -65,26 +65,52 @@ export const DashboardOverview = () => {
     try {
       setLoading(true);
       
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+        console.warn('Using fallback Supabase credentials for development');
+      }
+      
       // Load clients data from Supabase
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('*');
       
-      if (clientsError) throw clientsError;
+      if (clientsError) {
+        console.error('Error loading clients:', clientsError);
+        toast({
+          title: "Error Loading Clients",
+          description: clientsError.message,
+          variant: "destructive",
+        });
+      }
       
       // Load team data from Supabase
       const { data: teamData, error: teamError } = await supabase
         .from('employees')
         .select('*');
       
-      if (teamError) throw teamError;
+      if (teamError) {
+        console.error('Error loading team:', teamError);
+        toast({
+          title: "Error Loading Team",
+          description: teamError.message,
+          variant: "destructive",
+        });
+      }
       
       // Load finance data from Supabase
       const { data: financeData, error: financeError } = await supabase
         .from('finance')
         .select('*');
       
-      if (financeError) throw financeError;
+      if (financeError) {
+        console.error('Error loading finance:', financeError);
+        toast({
+          title: "Error Loading Finance",
+          description: financeError.message,
+          variant: "destructive",
+        });
+      }
 
       // Fetch recent activities
       const { data: clientActivity, error: clientActivityError } = await supabase
@@ -423,6 +449,7 @@ export const DashboardOverview = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-};
+
+           </div>
+   );
+ };
