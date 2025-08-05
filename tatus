@@ -1,0 +1,3 @@
+[33m5448722[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix Supabase environment variables and remove debug info
+[33me88fab2[m refactor: Use environment variables for Supabase client and add .env to .gitignore
+[33mf89413b[m fix: Corrected vercel.json configuration

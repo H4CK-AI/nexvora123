@@ -2,24 +2,38 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Temporary hardcoded values for development
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://hyxwzeclqmanosdpkxae.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg';
+// Get environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Validate environment variables (only log, no alerts)
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.warn('Using fallback Supabase credentials for development');
+// Fallback values for development only
+const FALLBACK_URL = 'https://hyxwzeclqmanosdpkxae.supabase.co';
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg';
+
+// Use environment variables if available, otherwise fallback (development only)
+const finalUrl = SUPABASE_URL || (import.meta.env.DEV ? FALLBACK_URL : '');
+const finalKey = SUPABASE_PUBLISHABLE_KEY || (import.meta.env.DEV ? FALLBACK_KEY : '');
+
+// Validate environment variables
+if (!finalUrl || !finalKey) {
+  console.error('Supabase environment variables are missing!');
+  console.error('VITE_SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
+  console.error('VITE_SUPABASE_PUBLISHABLE_KEY:', SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing');
+  
+  if (!import.meta.env.DEV) {
+    throw new Error('Supabase environment variables are required in production!');
+  }
 }
 
 // Check for malformed URL
-if (SUPABASE_URL && !SUPABASE_URL.startsWith('https://')) {
-  console.error('Invalid Supabase URL format:', SUPABASE_URL);
+if (finalUrl && !finalUrl.startsWith('https://')) {
+  console.error('Invalid Supabase URL format:', finalUrl);
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {
+export const supabase = createClient<Database>(finalUrl!, finalKey!, {
   auth: {
     storage: localStorage,
     persistSession: true,
@@ -29,6 +43,5 @@ export const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHAB
 
 // Add a helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  // Always return true since we have fallback values
-  return true;
+  return !!(finalUrl && finalKey);
 };

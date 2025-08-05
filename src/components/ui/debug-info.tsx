@@ -4,8 +4,8 @@ import { isSupabaseConfigured } from "@/integrations/supabase/client";
 
 export const DebugInfo = () => {
   const envVars = {
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || 'https://hyxwzeclqmanosdpkxae.supabase.co',
-    VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg',
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
   };
 
   const isConfigured = isSupabaseConfigured();
