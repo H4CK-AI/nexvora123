@@ -8,6 +8,119 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.env
+
+# local env files
+.env.local
+.env.*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# next.js
+.next/
+
+# nuxt.js
+.nuxt/
+.output/
+
+# sveltekit
+.svelte-kit/
+
+# common
+.DS_Store
+.idea
+.vscode
+*.log
+*.bak
+*.swp
+*.swo
+*.tmp
+*.sublime-project
+*.sublime-workspace
+
+# yarn
+yarn-debug.log*
+.yarn/
+
+# npm
+npm-debug.log*
+
+# pnpm
+pnpm-debug.log*
+
+# bun
+bun.lockb
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# editorconfig
+.editorconfig
+
+# misc
+*.tgz
+*.zip
+*.rar
+*.7z
+
+# build output
+dist/
+build/
+
+# test coverage
+coverage/
+
+# IDE specific
+.idea/
+.vscode/
+
+# dependency directories
+node_modules/
+
+# logs
+*.log
+
+# temp files
+*.tmp
+
+# macOS specific
+.DS_Store
+
+# Windows specific
+Thumbs.db
+
+# Vercel specific
+.vercel/
+
+# Vite specific
+.vite/
+
+# Bun specific
+bun.lockb
+
+# npm specific
+package-lock.json
+
+# yarn specific
+yarn.lock
+
+# pnpm specific
+pnpm-lock.yaml
+
+# other
+*.sqlite
+*.sqlite3
+*.db
+*.env
+
+
 dist
 dist-ssr
 *.local
