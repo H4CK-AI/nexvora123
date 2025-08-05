@@ -8,11 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-.env
+
 
 # local env files
-.env.local
-.env.*.local
+
 
 # vercel
 .vercel
@@ -118,7 +117,7 @@ pnpm-lock.yaml
 *.sqlite
 *.sqlite3
 *.db
-*.env
+
 
 
 dist

@@ -6,11 +6,11 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Fallback values for development only
+// Fallback values for production
 const FALLBACK_URL = 'https://hyxwzeclqmanosdpkxae.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg';
 
-// Use environment variables if available, otherwise fallback
+// Use environment variables if available, otherwise always use fallback
 const finalUrl = SUPABASE_URL || FALLBACK_URL;
 const finalKey = SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
 
@@ -23,7 +23,12 @@ console.log('Supabase Configuration Debug:', {
   hasEnvKey: !!SUPABASE_PUBLISHABLE_KEY,
   usingFallback: !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY,
   finalUrl: finalUrl?.substring(0, 30) + '...',
-  finalKey: finalKey?.substring(0, 20) + '...'
+  finalKey: finalKey?.substring(0, 20) + '...',
+  // Add more detailed environment info
+  envVars: {
+    VITE_SUPABASE_URL: SUPABASE_URL ? 'Set' : 'Missing',
+    VITE_SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing'
+  }
 });
 
 // Validate environment variables
@@ -83,4 +88,28 @@ export const supabase = createClient<Database>(finalUrl!, finalKey!, {
 // Add a helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
   return !!(finalUrl && finalKey);
+};
+
+// Add a test function to verify Supabase connection
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('Testing Supabase connection...');
+    const { data, error } = await supabase
+      .from('clients')
+      .select('count')
+      .limit(1);
+    
+    console.log('Supabase connection test result:', { data, error });
+    
+    if (error) {
+      console.error('Supabase connection failed:', error);
+      return false;
+    }
+    
+    console.log('Supabase connection successful');
+    return true;
+  } catch (error) {
+    console.error('Supabase connection test error:', error);
+    return false;
+  }
 };
