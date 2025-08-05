@@ -66,6 +66,11 @@ export const DashboardOverview = () => {
     try {
       setLoading(true);
       
+      // Test Supabase connection first
+      console.log('Testing Supabase connection...');
+      const connectionTest = await testSupabaseConnection();
+      console.log('Connection test result:', connectionTest);
+      
       // Check if Supabase is properly configured
       console.log('Environment check:', {
         VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
