@@ -14,6 +14,18 @@ const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const finalUrl = SUPABASE_URL || FALLBACK_URL;
 const finalKey = SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
 
+// Enhanced logging for debugging
+console.log('Supabase Configuration Debug:', {
+  mode: import.meta.env.MODE,
+  dev: import.meta.env.DEV,
+  prod: import.meta.env.PROD,
+  hasEnvUrl: !!SUPABASE_URL,
+  hasEnvKey: !!SUPABASE_PUBLISHABLE_KEY,
+  usingFallback: !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY,
+  finalUrl: finalUrl?.substring(0, 30) + '...',
+  finalKey: finalKey?.substring(0, 20) + '...'
+});
+
 // Validate environment variables
 if (!finalUrl || !finalKey) {
   console.error('Supabase environment variables are missing!');
@@ -27,12 +39,42 @@ if (finalUrl && !finalUrl.startsWith('https://')) {
   console.error('Invalid Supabase URL format:', finalUrl);
 }
 
+// Create a safe storage mechanism for production
+const createSafeStorage = () => {
+  try {
+    // Check if localStorage is available
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage;
+    }
+    // Fallback to memory storage for production
+    console.warn('localStorage not available, using memory storage');
+    return {
+      getItem: (key: string) => null,
+      setItem: (key: string, value: string) => {},
+      removeItem: (key: string) => {},
+      clear: () => {},
+      length: 0,
+      key: (index: number) => null
+    };
+  } catch (error) {
+    console.warn('localStorage access failed, using memory storage:', error);
+    return {
+      getItem: (key: string) => null,
+      setItem: (key: string, value: string) => {},
+      removeItem: (key: string) => {},
+      clear: () => {},
+      length: 0,
+      key: (index: number) => null
+    };
+  }
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(finalUrl!, finalKey!, {
   auth: {
-    storage: localStorage,
+    storage: createSafeStorage(),
     persistSession: true,
     autoRefreshToken: true,
   }

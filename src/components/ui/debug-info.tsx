@@ -40,7 +40,12 @@ export const DebugInfo = () => {
         
         <div className="space-y-1">
           <p className="text-sm font-medium">Environment:</p>
-          <Badge variant="outline">{import.meta.env.MODE}</Badge>
+          <div className="flex gap-2">
+            <Badge variant="outline">{import.meta.env.MODE}</Badge>
+            <Badge variant={import.meta.env.DEV ? "secondary" : "default"}>
+              {import.meta.env.DEV ? "Development" : "Production"}
+            </Badge>
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -56,6 +61,15 @@ export const DebugInfo = () => {
         <div className="space-y-1">
           <p className="text-sm font-medium">Build Time:</p>
           <Badge variant="outline">{import.meta.env.BUILD_TIME || 'Unknown'}</Badge>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Configuration Status:</p>
+          <div className="text-xs space-y-1">
+            <div>Using Fallback: {(!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ? "Yes" : "No"}</div>
+            <div>Environment Mode: {import.meta.env.MODE}</div>
+            <div>Is Development: {import.meta.env.DEV ? "Yes" : "No"}</div>
+          </div>
         </div>
 
         {!isConfigured && (

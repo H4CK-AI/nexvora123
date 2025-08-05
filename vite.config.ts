@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist",
     sourcemap: false,
-    minify: "terser",
+    minify: "esbuild", // Changed from "terser" to "esbuild" for better Vercel compatibility
     rollupOptions: {
       output: {
         manualChunks: {
@@ -34,5 +34,10 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     'process.env': {},
+    // Ensure environment variables are properly injected
+    __VUE_OPTIONS_API__: true,
+    __VUE_PROD_DEVTOOLS__: false,
   },
+  // Add environment variable handling for Vercel
+  envPrefix: 'VITE_',
 }));

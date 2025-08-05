@@ -71,7 +71,8 @@ export const DashboardOverview = () => {
         VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
         VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing',
         MODE: import.meta.env.MODE,
-        DEV: import.meta.env.DEV
+        DEV: import.meta.env.DEV,
+        PROD: import.meta.env.PROD
       });
       
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
@@ -82,27 +83,38 @@ export const DashboardOverview = () => {
         });
       }
       
-             // Load clients data from Supabase
-       console.log('Attempting to load clients data...');
-       const { data: clientsData, error: clientsError } = await supabase
-         .from('clients')
-         .select('*');
-       
-       console.log('Clients data result:', { data: clientsData?.length || 0, error: clientsError });
-       
-       if (clientsError) {
-         console.error('Error loading clients:', clientsError);
-         toast({
-           title: "Error Loading Clients",
-           description: clientsError.message,
-           variant: "destructive",
-         });
-       }
+      // Load clients data from Supabase
+      console.log('Attempting to load clients data...');
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('*');
+      
+      console.log('Clients data result:', { 
+        data: clientsData?.length || 0, 
+        error: clientsError,
+        sampleData: clientsData?.slice(0, 2)
+      });
+      
+      if (clientsError) {
+        console.error('Error loading clients:', clientsError);
+        toast({
+          title: "Error Loading Clients",
+          description: clientsError.message,
+          variant: "destructive",
+        });
+      }
       
       // Load team data from Supabase
+      console.log('Attempting to load team data...');
       const { data: teamData, error: teamError } = await supabase
         .from('employees')
         .select('*');
+      
+      console.log('Team data result:', { 
+        data: teamData?.length || 0, 
+        error: teamError,
+        sampleData: teamData?.slice(0, 2)
+      });
       
       if (teamError) {
         console.error('Error loading team:', teamError);
@@ -114,9 +126,16 @@ export const DashboardOverview = () => {
       }
       
       // Load finance data from Supabase
+      console.log('Attempting to load finance data...');
       const { data: financeData, error: financeError } = await supabase
         .from('finance')
         .select('*');
+      
+      console.log('Finance data result:', { 
+        data: financeData?.length || 0, 
+        error: financeError,
+        sampleData: financeData?.slice(0, 2)
+      });
       
       if (financeError) {
         console.error('Error loading finance:', financeError);
@@ -183,20 +202,39 @@ export const DashboardOverview = () => {
       const totalClients = clientsData?.length || 0;
       const teamSize = teamData?.length || 0;
       
+      console.log('Data calculation debug:', {
+        clientsData: clientsData?.length || 0,
+        teamData: teamData?.length || 0,
+        financeData: financeData?.length || 0,
+        totalClients,
+        teamSize
+      });
+      
       // Calculate monthly revenue from finance data
       let monthlyRevenue = 0;
       if (financeData && financeData.length > 0) {
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
         
+        console.log('Finance data processing:', {
+          financeDataLength: financeData.length,
+          financeDataSample: financeData.slice(0, 2)
+        });
+        
         financeData.forEach((record) => {
           const revenue = parseFloat(record.revenue.replace(/[^0-9.-]+/g, "")) || 0;
           monthlyRevenue += revenue;
+          console.log('Processing finance record:', { record, revenue, monthlyRevenue });
         });
       }
       
       // Calculate active projects (clients with Active status)
       const activeProjects = clientsData?.filter(c => c.status === 'Active').length || 0;
+      
+      console.log('Active projects calculation:', {
+        clientsData: clientsData?.map(c => ({ name: c.name, status: c.status })) || [],
+        activeProjects
+      });
       
       // Calculate growth metrics (simplified)
       const revenueGrowth = financeData?.length > 1 ? 
@@ -204,14 +242,18 @@ export const DashboardOverview = () => {
       const clientGrowth = totalClients > 0 ? 
         Math.floor(Math.random() * 15 - 5) : 0;
 
-      setData({
+      const finalData = {
         totalClients,
         monthlyRevenue,
         activeProjects,
         teamSize,
         revenueGrowth,
         clientGrowth,
-      });
+      };
+      
+      console.log('Final dashboard data:', finalData);
+
+      setData(finalData);
 
       toast({
         title: "Dashboard Updated",
