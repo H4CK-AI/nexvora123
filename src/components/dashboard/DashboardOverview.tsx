@@ -5,7 +5,6 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddClientModal } from "@/components/modals/AddClientModal";
-import { DebugInfo } from "@/components/ui/debug-info";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -462,11 +461,6 @@ export const DashboardOverview = () => {
           </CardContent>
                  </Card>
        </div>
-
-      {/* Debug Information - Show in production for troubleshooting */}
-      <div className="mt-6">
-        <DebugInfo />
-      </div>
     </div>
   );
 };
