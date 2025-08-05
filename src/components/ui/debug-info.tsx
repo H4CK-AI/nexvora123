@@ -29,6 +29,11 @@ export const DebugInfo = () => {
               <Badge variant={value ? "secondary" : "destructive"}>
                 {value ? "Set" : "Missing"}
               </Badge>
+              {value && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Value: {value.substring(0, 20)}...
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -41,6 +46,16 @@ export const DebugInfo = () => {
         <div className="space-y-1">
           <p className="text-sm font-medium">Base URL:</p>
           <Badge variant="outline">{import.meta.env.BASE_URL}</Badge>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Current URL:</p>
+          <Badge variant="outline">{window.location.href}</Badge>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Build Time:</p>
+          <Badge variant="outline">{import.meta.env.BUILD_TIME || 'Unknown'}</Badge>
         </div>
 
         {!isConfigured && (

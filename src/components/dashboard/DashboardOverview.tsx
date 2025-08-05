@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddClientModal } from "@/components/modals/AddClientModal";
+import { DebugInfo } from "@/components/ui/debug-info";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -66,35 +67,37 @@ export const DashboardOverview = () => {
       setLoading(true);
       
       // Check if Supabase is properly configured
+      console.log('Environment check:', {
+        VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
+        VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing',
+        MODE: import.meta.env.MODE,
+        DEV: import.meta.env.DEV
+      });
+      
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-        console.warn('Environment variables not found, using fallback for development');
-        if (import.meta.env.DEV) {
-          toast({
-            title: "Development Mode",
-            description: "Using fallback Supabase credentials",
-          });
-        } else {
-          toast({
-            title: "Configuration Error",
-            description: "Supabase environment variables are missing in production",
-            variant: "destructive",
-          });
-        }
-      }
-      
-      // Load clients data from Supabase
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('*');
-      
-      if (clientsError) {
-        console.error('Error loading clients:', clientsError);
+        console.warn('Environment variables not found, using fallback values');
         toast({
-          title: "Error Loading Clients",
-          description: clientsError.message,
-          variant: "destructive",
+          title: "Using Fallback",
+          description: "Environment variables not found, using fallback Supabase credentials",
         });
       }
+      
+             // Load clients data from Supabase
+       console.log('Attempting to load clients data...');
+       const { data: clientsData, error: clientsError } = await supabase
+         .from('clients')
+         .select('*');
+       
+       console.log('Clients data result:', { data: clientsData?.length || 0, error: clientsError });
+       
+       if (clientsError) {
+         console.error('Error loading clients:', clientsError);
+         toast({
+           title: "Error Loading Clients",
+           description: clientsError.message,
+           variant: "destructive",
+         });
+       }
       
       // Load team data from Supabase
       const { data: teamData, error: teamError } = await supabase
@@ -461,6 +464,11 @@ export const DashboardOverview = () => {
           </CardContent>
                  </Card>
        </div>
+
+      {/* Debug Information - Show in production for troubleshooting */}
+      <div className="mt-6">
+        <DebugInfo />
+      </div>
     </div>
   );
 };

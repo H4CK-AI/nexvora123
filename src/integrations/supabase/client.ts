@@ -10,19 +10,16 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const FALLBACK_URL = 'https://hyxwzeclqmanosdpkxae.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg';
 
-// Use environment variables if available, otherwise fallback (development only)
-const finalUrl = SUPABASE_URL || (import.meta.env.DEV ? FALLBACK_URL : '');
-const finalKey = SUPABASE_PUBLISHABLE_KEY || (import.meta.env.DEV ? FALLBACK_KEY : '');
+// Use environment variables if available, otherwise fallback
+const finalUrl = SUPABASE_URL || FALLBACK_URL;
+const finalKey = SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
 
 // Validate environment variables
 if (!finalUrl || !finalKey) {
   console.error('Supabase environment variables are missing!');
   console.error('VITE_SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
   console.error('VITE_SUPABASE_PUBLISHABLE_KEY:', SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing');
-  
-  if (!import.meta.env.DEV) {
-    throw new Error('Supabase environment variables are required in production!');
-  }
+  console.error('Using fallback values:', !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY);
 }
 
 // Check for malformed URL
