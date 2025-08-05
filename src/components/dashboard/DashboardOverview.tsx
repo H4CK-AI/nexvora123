@@ -1,10 +1,13 @@
 import { KPICard } from "./KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DollarSign, TrendingUp, Calendar } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddClientModal } from "@/components/modals/AddClientModal";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 interface DashboardData {
   totalClients: number;
@@ -16,6 +19,7 @@ interface DashboardData {
 }
 
 export const DashboardOverview = () => {
+  const dashboardRef = useRef(null);
   const [data, setData] = useState<DashboardData>({
     totalClients: 0,
     monthlyRevenue: 0,
@@ -25,10 +29,36 @@ export const DashboardOverview = () => {
     clientGrowth: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     loadDashboardData();
+
+    const subscription = supabase.channel('any')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'client' }, ...prev].slice(0, 5));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'transaction' }, ...prev].slice(0, 5));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'task' }, ...prev].slice(0, 5));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'employees' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'employee' }, ...prev].slice(0, 5));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'finance' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'finance' }, ...prev].slice(0, 5));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'compliance' }, (payload) => {
+        setRecentActivity(prev => [ { ...payload.new, type: 'compliance' }, ...prev].slice(0, 5));
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadDashboardData = async () => {
@@ -55,7 +85,59 @@ export const DashboardOverview = () => {
         .select('*');
       
       if (financeError) throw financeError;
-      
+
+      // Fetch recent activities
+      const { data: clientActivity, error: clientActivityError } = await supabase
+        .from('clients')
+        .select('name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: transactionActivity, error: transactionActivityError } = await supabase
+        .from('transactions')
+        .select('description, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: taskActivity, error: taskActivityError } = await supabase
+        .from('tasks')
+        .select('title, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: employeeActivity, error: employeeActivityError } = await supabase
+        .from('employees')
+        .select('name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: financeActivity, error: financeActivityError } = await supabase
+        .from('finance')
+        .select('month, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: complianceActivity, error: complianceActivityError } = await supabase
+        .from('compliance')
+        .select('title, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (clientActivityError || transactionActivityError || taskActivityError || employeeActivityError || financeActivityError || complianceActivityError) {
+        console.error('Error fetching recent activity:', clientActivityError || transactionActivityError || taskActivityError || employeeActivityError || financeActivityError || complianceActivityError);
+      } else {
+        const combinedActivity = [
+          ...(clientActivity || []).map(a => ({ ...a, type: 'client' })),
+          ...(transactionActivity || []).map(a => ({ ...a, type: 'transaction' })),
+          ...(taskActivity || []).map(a => ({ ...a, type: 'task' })),
+          ...(employeeActivity || []).map(a => ({ ...a, type: 'employee' })),
+          ...(financeActivity || []).map(a => ({ ...a, type: 'finance' })),
+          ...(complianceActivity || []).map(a => ({ ...a, type: 'compliance' }))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setRecentActivity(combinedActivity.slice(0, 5));
+      }
+
       // Calculate metrics
       const totalClients = clientsData?.length || 0;
       const teamSize = teamData?.length || 0;
@@ -130,18 +212,100 @@ export const DashboardOverview = () => {
     }
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     toast({
-      title: "Generating Report",
-      description: "Monthly analytics report is being prepared.",
+      title: "Generating Detailed Report",
+      description: "Please wait while we prepare your PDF report.",
     });
-    // Simulate report generation
-    setTimeout(() => {
-      toast({
-        title: "Report Ready",
-        description: "Your monthly report has been generated successfully.",
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    // Title Page
+    pdf.text("Dashboard Report", 14, 20);
+    pdf.setFontSize(12);
+    pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    // Summary Metrics
+    pdf.text("Summary Metrics", 14, 45);
+    autoTable(pdf, {
+      startY: 50,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Clients', data.totalClients],
+        ['Monthly Revenue', `₹${data.monthlyRevenue.toLocaleString()}`],
+        ['Active Projects', data.activeProjects],
+        ['Team Size', data.teamSize],
+      ],
+    });
+
+    // Fetch all data for tables
+    const { data: clients } = await supabase.from('clients').select('*');
+    const { data: employees } = await supabase.from('employees').select('*');
+    const { data: finance } = await supabase.from('finance').select('*');
+    const { data: compliance } = await supabase.from('compliance').select('*');
+    const { data: tasks } = await supabase.from('tasks').select('*');
+
+    // Clients Table
+    if (clients && clients.length > 0) {
+      pdf.addPage();
+      pdf.text("Clients", 14, 20);
+      autoTable(pdf, {
+        startY: 25,
+        head: [['Name', 'Industry', 'Revenue', 'Status']],
+        body: clients.map(c => [c.name, c.industry, c.revenue, c.status]),
       });
-    }, 2000);
+    }
+
+    // Employees Table
+    if (employees && employees.length > 0) {
+      pdf.addPage();
+      pdf.text("Team Members", 14, 20);
+      autoTable(pdf, {
+        startY: 25,
+        head: [['Name', 'Position', 'Department', 'Status']],
+        body: employees.map(e => [e.name, e.position, e.department, e.status]),
+      });
+    }
+
+    // Finance Table
+    if (finance && finance.length > 0) {
+      pdf.addPage();
+      pdf.text("Financial Records", 14, 20);
+      autoTable(pdf, {
+        startY: 25,
+        head: [['Month', 'Revenue', 'Expenses', 'Profit']],
+        body: finance.map(f => [f.month, f.revenue, f.expenses, f.profit]),
+      });
+    }
+
+    // Compliance Table
+    if (compliance && compliance.length > 0) {
+      pdf.addPage();
+      pdf.text("Compliance Items", 14, 20);
+      autoTable(pdf, {
+        startY: 25,
+        head: [['Title', 'Category', 'Status', 'Due Date']],
+        body: compliance.map(c => [c.title, c.category, c.status, c.due_date]),
+      });
+    }
+
+    // Tasks Table
+    if (tasks && tasks.length > 0) {
+      pdf.addPage();
+      pdf.text("Tasks", 14, 20);
+      autoTable(pdf, {
+        startY: 25,
+        head: [['Title', 'Assignee', 'Status', 'Priority', 'Due Date']],
+        body: tasks.map(t => [t.title, t.assignee, t.status, t.priority, t.due_date]),
+      });
+    }
+
+    pdf.save('detailed-dashboard-report.pdf');
+
+    toast({
+      title: "Detailed Report Generated",
+      description: "Your detailed dashboard report has been downloaded.",
+    });
   };
 
   const handleUpdateKPIs = () => {
@@ -160,7 +324,7 @@ export const DashboardOverview = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={dashboardRef}>
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold gradient-text">Business Overview</h2>
         <button
@@ -208,21 +372,20 @@ export const DashboardOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                <span className="text-sm">New client added to CRM</span>
-                <span className="text-xs text-muted-foreground ml-auto">2m ago</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-neon-cyan rounded-full"></div>
-                <span className="text-sm">Payment received from Acme Corp</span>
-                <span className="text-xs text-muted-foreground ml-auto">15m ago</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-neon-purple rounded-full"></div>
-                <span className="text-sm">Team member completed project</span>
-                <span className="text-xs text-muted-foreground ml-auto">1h ago</span>
-              </div>
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-center space-x-3">
+                  <div className={`w-2 h-2 rounded-full ${{
+                    client: 'bg-neon-green',
+                    transaction: 'bg-neon-cyan',
+                    task: 'bg-neon-purple',
+                    employee: 'bg-neon-yellow',
+                    finance: 'bg-neon-red',
+                    compliance: 'bg-orange-500'
+                  }[activity.type]}`}></div>
+                  <span className="text-sm">{activity.type === 'client' ? `New client: ${activity.name}` : activity.type === 'transaction' ? activity.description : activity.type === 'task' ? `New task: ${activity.title}` : activity.type === 'employee' ? `New team member: ${activity.name}` : activity.type === 'finance' ? `New financial record for ${activity.month}` : `New compliance item: ${activity.title}`}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{new Date(activity.created_at).toLocaleTimeString()}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

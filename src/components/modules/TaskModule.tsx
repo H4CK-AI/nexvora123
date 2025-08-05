@@ -8,119 +8,118 @@ import { Plus, CheckCircle, Clock, AlertCircle, User, Trash2 } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { AddTaskModal } from "@/components/modals/AddTaskModal";
 import { useNotifications } from "@/hooks/useNotifications";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  assignee: string;
-  status: "To Do" | "In Progress" | "Done";
-  priority: "Low" | "Medium" | "High";
-  dueDate: string;
-  project: string;
-}
+type Task = Tables<"tasks">;
 
 export const TaskModule = () => {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Update client dashboard",
-      description: "Implement new analytics features for client portal",
-      assignee: "Alice Johnson",
-      status: "In Progress",
-      priority: "High",
-      dueDate: "2024-02-15",
-      project: "Client Portal"
-    },
-    {
-      id: "2", 
-      title: "Database optimization",
-      description: "Optimize query performance for large datasets",
-      assignee: "Bob Smith",
-      status: "To Do",
-      priority: "Medium",
-      dueDate: "2024-02-20",
-      project: "Backend"
-    },
-    {
-      id: "3",
-      title: "UI/UX redesign review",
-      description: "Review and approve new design mockups",
-      assignee: "Carol Davis",
-      status: "Done",
-      priority: "Medium",
-      dueDate: "2024-02-10",
-      project: "Design System"
-    }
-  ]);
-  
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { addNotification } = useNotifications();
 
-  const handleAddTask = (task: any) => {
-    const newTask = {
-      ...task,
-      id: (tasks.length + 1).toString()
-    };
-    setTasks([...tasks, newTask]);
-    toast({
-      title: "Task Added",
-      description: "New task created successfully.",
-    });
-    addNotification({
-      title: "New Task Created",
-      message: `Task "${task.title}" has been assigned to ${task.assignee}`,
-      type: "success",
-      priority: "medium",
-      category: "Tasks"
-    });
+  const fetchTasks = async () => {
+    const { data, error } = await supabase.from("tasks").select("*");
+    if (error) {
+      toast({
+        title: "Error fetching tasks",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setTasks(data || []);
+    }
   };
 
-  const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
-    const task = tasks.find(t => t.id === taskId);
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
-    toast({
-      title: "Task Updated",
-      description: `Task status changed to ${newStatus}.`,
-    });
-    if (task) {
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const handleAddTask = async (task: Omit<Task, "id" | "created_at" | "updated_at">) => {
+    const { data, error } = await supabase.from("tasks").insert(task).select();
+    if (error) {
+      toast({
+        title: "Error adding task",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data) {
+      setTasks([...tasks, data[0]]);
+      toast({
+        title: "Task Added",
+        description: "New task created successfully.",
+      });
       addNotification({
-        title: "Task Status Updated",
-        message: `"${task.title}" status changed to ${newStatus}`,
-        type: newStatus === "Done" ? "success" : "info",
-        priority: "low",
+        title: "New Task Created",
+        message: `Task "${task.title}" has been assigned to ${task.assignee}`,
+        type: "success",
+        priority: "medium",
         category: "Tasks"
       });
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleStatusChange = async (taskId: string, newStatus: Task["status"]) => {
     const task = tasks.find(t => t.id === taskId);
-    setTasks(tasks.filter(task => task.id !== taskId));
-    toast({
-      title: "Task Deleted",
-      description: "Task has been removed successfully.",
-    });
-    if (task) {
-      addNotification({
-        title: "Task Deleted",
-        message: `Task "${task.title}" has been removed`,
-        type: "warning",
-        priority: "low",
-        category: "Tasks"
+    const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", taskId);
+    if (error) {
+      toast({
+        title: "Error updating task",
+        description: error.message,
+        variant: "destructive",
       });
+    } else {
+      fetchTasks();
+      toast({
+        title: "Task Updated",
+        description: `Task status changed to ${newStatus}.`,
+      });
+      if (task) {
+        addNotification({
+          title: "Task Status Updated",
+          message: `"${task.title}" status changed to ${newStatus}`,
+          type: newStatus === "Done" ? "success" : "info",
+          priority: "low",
+          category: "Tasks"
+        });
+      }
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    if (error) {
+      toast({
+        title: "Error deleting task",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setTasks(tasks.filter(task => task.id !== taskId));
+      toast({
+        title: "Task Deleted",
+        description: "Task has been removed successfully.",
+      });
+      if (task) {
+        addNotification({
+          title: "Task Deleted",
+          message: `Task "${task.title}" has been removed`,
+          type: "warning",
+          priority: "low",
+          category: "Tasks"
+        });
+      }
     }
   };
 
   const filteredTasks = tasks.filter(task => {
     const matchesFilter = filter === "All" || task.status === filter;
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.assignee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.project.toLowerCase().includes(searchTerm.toLowerCase());
+                         (task.assignee && task.assignee.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (task.project && task.project.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesFilter && matchesSearch;
   });
 
@@ -260,7 +259,7 @@ export const TaskModule = () => {
                           <User className="w-3 h-3" />
                           <span>{task.assignee}</span>
                         </div>
-                        <span className="text-muted-foreground">{task.dueDate}</span>
+                        <span className="text-muted-foreground">{task.due_date}</span>
                       </div>
                       
                       <div className="flex items-center justify-between">

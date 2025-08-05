@@ -5,28 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tables } from "@/integrations/supabase/types";
+
+type Task = Tables<"tasks">;
 
 interface AddTaskModalProps {
-  onAddTask: (task: any) => void;
+  onAddTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => void;
   trigger: React.ReactNode;
 }
 
 export const AddTaskModal = ({ onAddTask, trigger }: AddTaskModalProps) => {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<Task, "id" | "created_at" | "updated_at">>({
     title: "",
     description: "",
     assignee: "",
     status: "To Do",
     priority: "Medium",
-    dueDate: "",
+    due_date: "",
     project: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.assignee || !formData.dueDate) {
+        if (!formData.title || !formData.assignee || !formData.due_date) {
       return;
     }
 
@@ -38,7 +41,7 @@ export const AddTaskModal = ({ onAddTask, trigger }: AddTaskModalProps) => {
       assignee: "",
       status: "To Do",
       priority: "Medium",
-      dueDate: "",
+      due_date: "",
       project: ""
     });
     setOpen(false);
@@ -133,12 +136,12 @@ export const AddTaskModal = ({ onAddTask, trigger }: AddTaskModalProps) => {
           </div>
 
           <div>
-            <Label htmlFor="dueDate">Due Date</Label>
+            <Label htmlFor="due_date">Due Date</Label>
             <Input
-              id="dueDate"
+              id="due_date"
               type="date"
-              value={formData.dueDate}
-              onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+              value={formData.due_date}
+              onChange={(e) => setFormData({...formData, due_date: e.target.value})}
               className="bg-background/50 border-primary/30"
               required
             />
