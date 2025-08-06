@@ -6,16 +6,6 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Check if environment variables are set
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error(
-    `Supabase environment variables are missing!\n` +
-    `VITE_SUPABASE_URL: ${SUPABASE_URL ? 'Set' : 'Missing'}\n` +
-    `VITE_SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing'}\n` +
-    `Please set these environment variables in your .env file (for local development) and in your Vercel project settings (for production).`
-  );
-}
-
 // Enhanced logging for debugging
 console.log('Supabase Configuration Debug:', {
   mode: import.meta.env.MODE,
@@ -69,16 +59,81 @@ const createSafeStorage = () => {
   }
 };
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Create Supabase client with proper error handling
+let supabase: any = null;
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: createSafeStorage(),
-    persistSession: true,
-    autoRefreshToken: true,
+try {
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    console.error('Supabase environment variables are missing!');
+    console.error('VITE_SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
+    console.error('VITE_SUPABASE_PUBLISHABLE_KEY:', SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing');
+    
+    // Create a mock client that won't crash the app
+    console.warn('Creating mock Supabase client - app will work but no data will load');
+    supabase = {
+      from: (table: string) => ({
+        select: (columns?: string) => Promise.resolve({ data: [], error: null }),
+        insert: (data: any) => Promise.resolve({ data: null, error: new Error('Mock client - no data saved') }),
+        update: (data: any) => Promise.resolve({ data: null, error: new Error('Mock client - no data updated') }),
+        delete: () => Promise.resolve({ data: null, error: new Error('Mock client - no data deleted') }),
+        eq: (column: string, value: any) => ({
+          select: () => Promise.resolve({ data: [], error: null }),
+          update: () => Promise.resolve({ data: null, error: new Error('Mock client') }),
+          delete: () => Promise.resolve({ data: null, error: new Error('Mock client') }),
+        }),
+        order: (column: string, options?: any) => ({
+          select: () => Promise.resolve({ data: [], error: null }),
+          limit: (count: number) => Promise.resolve({ data: [], error: null }),
+        }),
+        limit: (count: number) => Promise.resolve({ data: [], error: null }),
+      }),
+      channel: (name: string) => ({
+        on: (event: string, callback: any) => ({
+          subscribe: () => ({ unsubscribe: () => {} }),
+        }),
+        subscribe: () => ({ unsubscribe: () => {} }),
+      }),
+    };
+  } else {
+    // Create real Supabase client
+    supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage: createSafeStorage(),
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    });
   }
-});
+} catch (error) {
+  console.error('Failed to create Supabase client:', error);
+  // Create a mock client as fallback
+  supabase = {
+    from: (table: string) => ({
+      select: (columns?: string) => Promise.resolve({ data: [], error: new Error('Supabase not configured') }),
+      insert: (data: any) => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      update: (data: any) => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      delete: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      eq: (column: string, value: any) => ({
+        select: () => Promise.resolve({ data: [], error: null }),
+        update: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+        delete: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      }),
+      order: (column: string, options?: any) => ({
+        select: () => Promise.resolve({ data: [], error: null }),
+        limit: (count: number) => Promise.resolve({ data: [], error: null }),
+      }),
+      limit: (count: number) => Promise.resolve({ data: [], error: null }),
+    }),
+    channel: (name: string) => ({
+      on: (event: string, callback: any) => ({
+        subscribe: () => ({ unsubscribe: () => {} }),
+      }),
+      subscribe: () => ({ unsubscribe: () => {} }),
+    }),
+  };
+}
+
+export { supabase };
 
 // Add a helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
