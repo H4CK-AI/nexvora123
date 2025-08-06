@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase, testSupabaseConnection } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddClientModal } from "@/components/modals/AddClientModal";
-import { DebugInfo } from "@/components/ui/debug-info";
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -81,11 +81,13 @@ export const DashboardOverview = () => {
       });
       
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-        console.warn('Environment variables not found, using fallback values');
         toast({
-          title: "Using Fallback",
-          description: "Environment variables not found, using fallback Supabase credentials",
+          title: "Supabase Configuration Error",
+          description: "Supabase environment variables are missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your environment.",
+          variant: "destructive"
         });
+        setLoading(false);
+        return;
       }
       
       // Load clients data from Supabase
@@ -512,10 +514,7 @@ export const DashboardOverview = () => {
                  </Card>
        </div>
 
-      {/* Debug Information - Show in production for troubleshooting */}
-      <div className="mt-6">
-        <DebugInfo />
-      </div>
+
     </div>
   );
 };

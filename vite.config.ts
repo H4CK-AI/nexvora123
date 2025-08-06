@@ -34,12 +34,6 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     'process.env': {},
-    // Ensure environment variables are properly injected
-    __VUE_OPTIONS_API__: true,
-    __VUE_PROD_DEVTOOLS__: false,
-    // Explicitly define environment variables for Vercel
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
-    'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(process.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   },
   // Add environment variable handling for Vercel
   envPrefix: 'VITE_',

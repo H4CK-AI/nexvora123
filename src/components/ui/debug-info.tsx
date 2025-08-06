@@ -66,7 +66,7 @@ export const DebugInfo = () => {
         <div className="space-y-1">
           <p className="text-sm font-medium">Configuration Status:</p>
           <div className="text-xs space-y-1">
-            <div>Using Fallback: {(!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ? "Yes" : "No"}</div>
+            <div>Environment Variables Set: {(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ? "Yes" : "No"}</div>
             <div>Environment Mode: {import.meta.env.MODE}</div>
             <div>Is Development: {import.meta.env.DEV ? "Yes" : "No"}</div>
           </div>

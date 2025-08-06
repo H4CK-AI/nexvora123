@@ -6,13 +6,15 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Fallback values for production
-const FALLBACK_URL = 'https://hyxwzeclqmanosdpkxae.supabase.co';
-const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5eHd6ZWNscW1hbm9zZHBreGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDQ2NTUsImV4cCI6MjA2OTU4MDY1NX0.Ij0r0wSyCXKjfmSzVut-ULRSzhAN499KWj1k1jhzCOg';
-
-// Use environment variables if available, otherwise always use fallback
-const finalUrl = SUPABASE_URL || FALLBACK_URL;
-const finalKey = SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
+// Check if environment variables are set
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error(
+    `Supabase environment variables are missing!\n` +
+    `VITE_SUPABASE_URL: ${SUPABASE_URL ? 'Set' : 'Missing'}\n` +
+    `VITE_SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing'}\n` +
+    `Please set these environment variables in your .env file (for local development) and in your Vercel project settings (for production).`
+  );
+}
 
 // Enhanced logging for debugging
 console.log('Supabase Configuration Debug:', {
@@ -21,27 +23,20 @@ console.log('Supabase Configuration Debug:', {
   prod: import.meta.env.PROD,
   hasEnvUrl: !!SUPABASE_URL,
   hasEnvKey: !!SUPABASE_PUBLISHABLE_KEY,
-  usingFallback: !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY,
-  finalUrl: finalUrl?.substring(0, 30) + '...',
-  finalKey: finalKey?.substring(0, 20) + '...',
-  // Add more detailed environment info
+  finalUrl: SUPABASE_URL?.substring(0, 30) + '...',
+  finalKey: SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + '...',
   envVars: {
     VITE_SUPABASE_URL: SUPABASE_URL ? 'Set' : 'Missing',
     VITE_SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing'
-  }
+  },
+  buildTime: import.meta.env.BUILD_TIME || 'Unknown',
+  baseUrl: import.meta.env.BASE_URL || '/',
+  currentUrl: typeof window !== 'undefined' ? window.location.href : 'Unknown'
 });
 
-// Validate environment variables
-if (!finalUrl || !finalKey) {
-  console.error('Supabase environment variables are missing!');
-  console.error('VITE_SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
-  console.error('VITE_SUPABASE_PUBLISHABLE_KEY:', SUPABASE_PUBLISHABLE_KEY ? 'Set' : 'Missing');
-  console.error('Using fallback values:', !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY);
-}
-
 // Check for malformed URL
-if (finalUrl && !finalUrl.startsWith('https://')) {
-  console.error('Invalid Supabase URL format:', finalUrl);
+if (SUPABASE_URL && !SUPABASE_URL.startsWith('https://')) {
+  console.error('Invalid Supabase URL format:', SUPABASE_URL);
 }
 
 // Create a safe storage mechanism for production
@@ -77,7 +72,7 @@ const createSafeStorage = () => {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(finalUrl!, finalKey!, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: createSafeStorage(),
     persistSession: true,
@@ -87,7 +82,7 @@ export const supabase = createClient<Database>(finalUrl!, finalKey!, {
 
 // Add a helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  return !!(finalUrl && finalKey);
+  return !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 };
 
 // Add a test function to verify Supabase connection
