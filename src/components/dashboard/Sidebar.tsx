@@ -35,7 +35,7 @@ export const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
     <div className="glass-card h-full w-64 p-6 border-r border-border/30">
       <div className="flex items-center space-x-2 mb-8">
         <div className="w-8 h-8 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-lg glow-cyan"></div>
-        <h1 className="text-xl font-bold gradient-text">OpsCore</h1>
+        <h1 className="text-xl font-bold gradient-text">NEXVORA</h1>
       </div>
       
       <nav className="space-y-2">
