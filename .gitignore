@@ -19,6 +19,9 @@ node_modules
 # vercel
 .vercel
 
+# my-app folder (not needed for deployment)
+my-app/
+
 # typescript
 *.tsbuildinfo
 
